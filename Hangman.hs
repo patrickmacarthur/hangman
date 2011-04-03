@@ -17,16 +17,20 @@ hangman :: String -> [Char] -> Int -> IO ()
 hangman word guesses badGuessCount
   | solved word guesses = 
       putStrLn $ "You solved it!  The word is " ++ word ++ "!"
-  | badGuessCount >= maxBadGuesses =
+  | badGuessCount > maxBadGuesses =
       putStrLn $ "You ran out of guesses.  The word is " ++ word ++ "."
   | otherwise = do
       putStrLn $ "The word is " ++ showPartialWord word guesses
       putStrLn $ "You have guessed the following letters: " ++ 
                    (intersperse ' ' . sort) guesses
+      putStr "Incorrect guesses: "
+      putStrLn $ show badGuessCount ++ "/" ++ show maxBadGuesses
       putStr "Enter a guess please: "
       guess <- getChar
       putStrLn []
-      hangman word (guess:guesses)
+      if guess `elem` guesses
+        then hangman word guesses badGuessCount
+        else hangman word (guess:guesses)
           (if guess `elem` word then badGuessCount else badGuessCount + 1)
 
 {- True if the word has been solved with the given guesses. -}
