@@ -4,6 +4,7 @@
 {- A simple interactive hangman game. -}
 
 import Control.Monad
+import Data.Char
 import Data.List
 import System.Random
 import System.IO
@@ -43,15 +44,15 @@ showPartialWord word guesses = helper word
           | x `elem` guesses = x : helper xs
           | otherwise        = '_' : helper xs
 
-{- Returns a word in the given dictionary file that contains only characters in
- - the given list of valid characters. -}
-getDictionaryWord :: String -> [Char] -> IO String
+{- Returns a word in the given dictionary file that contains only characters
+ - that satisfy the given condition. -}
+getDictionaryWord :: String -> (Char -> Bool) -> IO String
 getDictionaryWord dictFile valid = do
     contents <- readFile dictFile
     getRandomWord $ (filter isValidWord . lines) contents
   where isValidWord = foldr isValidChar True
         isValidChar _ False = False
-        isValidChar x _     = x `elem` valid
+        isValidChar x _     = valid x
 
 {- Returns a random word in the given list of words. -}
 getRandomWord :: [String] -> IO String
@@ -63,6 +64,5 @@ main :: IO ()
 main = do 
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
-    word <- getDictionaryWord "/usr/share/dict/words" validChars
+    word <- getDictionaryWord "/usr/share/dict/words" isLower
     hangman word [] 0
-  where validChars = "abcdefghijklmnopqrstuvwxyz"
