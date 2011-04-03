@@ -21,7 +21,9 @@ hangman word guesses badGuessCount
       putStrLn $ "You ran out of guesses.  The word is " ++ word ++ "."
   | otherwise = do
       putStrLn $ "The word is " ++ showPartialWord word guesses
-      putStrLn "Enter a guess please: "
+      putStrLn $ "You have guessed the following letters: " ++ 
+                   (intersperse ' ' . sort) guesses
+      putStr "Enter a guess please: "
       guess <- getChar
       putStrLn []
       hangman word (guess:guesses)
@@ -44,12 +46,12 @@ showPartialWord word guesses = helper word
           | x `elem` guesses = x : helper xs
           | otherwise        = '_' : helper xs
 
-{- Returns a word in the given dictionary file that contains only characters
+{- Returns all words in the given dictionary file that contains only characters
  - that satisfy the given condition. -}
-getDictionaryWord :: String -> (Char -> Bool) -> IO String
-getDictionaryWord dictFile valid = do
+getDictionaryWords :: String -> (Char -> Bool) -> IO [String]
+getDictionaryWords dictFile valid = do
     contents <- readFile dictFile
-    getRandomWord $ (filter isValidWord . lines) contents
+    return $ (filter isValidWord . lines) contents
   where isValidWord = foldr isValidChar True
         isValidChar _ False = False
         isValidChar x _     = valid x
@@ -64,5 +66,12 @@ main :: IO ()
 main = do 
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
-    word <- getDictionaryWord "/usr/share/dict/words" isLower
-    hangman word [] 0
+    allWords <- getDictionaryWords "/usr/share/dict/words" isLower
+    gameWrapper allWords
+  where gameWrapper allWords = do
+          word <- getRandomWord allWords
+          hangman word [] 0
+          putStr $ "Play again? (y/n): "
+          response <- getChar
+          putStrLn "\n"
+          when (toLower response == 'y') $ gameWrapper allWords
