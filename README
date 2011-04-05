@@ -1,0 +1,7 @@
+A simple interactive hangman game written in Haskell.
+
+This is mostly just a demo to show that Haskell and functional programming are
+capable of being used for real-world purposes, such as games.
+
+This program was written on Fedora 14 using ghc 6.12.3, and currently assumes
+that a system dictionary will be found in /usr/share/dict/words.
