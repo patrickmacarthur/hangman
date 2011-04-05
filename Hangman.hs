@@ -30,17 +30,15 @@ hangman word guesses badGuessCount
             then badGuessCount 
             else badGuessCount + 1
           guesses' guess = 
-            if alreadyGuessed guess then guesses else guess:guesses
+            if alreadyGuessed guess then guesses else sort (guess:guesses)
       in hangman word (guesses' guess) (badGuessCount' guess badGuessCount)
 
 {- Prints the game status. -}
 printStatus :: String -> [Char] -> Int -> IO ()
-printStatus word guesses badGuessCount = do
-  putStrLn $ "The word is " ++ showPartialWord word guesses
-  putStrLn $ "You have guessed the following letters: " ++ 
-               (intersperse ' ' . sort) guesses
-  putStr "Incorrect guesses: "
-  putStrLn $ show badGuessCount ++ "/" ++ show maxBadGuesses
+printStatus word guesses badGuessCount = putStrLn
+    $ "The word is " ++ showPartialWord word guesses
+   ++ "\nYou have guessed the following letters: " ++ intersperse ' ' guesses
+   ++ "\nIncorrect guesses: " ++ show badGuessCount ++ "/" ++ show maxBadGuesses
 
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
