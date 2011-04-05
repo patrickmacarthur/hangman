@@ -52,13 +52,10 @@ showPartialWord word guesses = helper word
 
 {- Returns all words in the given dictionary file that contains only characters
  - that satisfy the given condition. -}
-getDictionaryWords :: String -> (Char -> Bool) -> IO [String]
+getDictionaryWords :: String -> (String -> Bool) -> IO [String]
 getDictionaryWords dictFile valid = do
     contents <- readFile dictFile
-    return $ (filter isValidWord . lines) contents
-  where isValidWord = foldr isValidChar True
-        isValidChar _ False = False
-        isValidChar x _     = valid x
+    return $ (filter valid . lines) contents
 
 {- Returns a random word in the given list of words. -}
 getRandomWord :: [String] -> IO String
@@ -66,11 +63,23 @@ getRandomWord allWords =
   getStdRandom (randomR (0,length allWords)) >>= \index ->
     return $ allWords !! index
 
+{- Predicate to determine if a word is valid for use in the hangman game. -}
+isValidWord :: String -> Bool
+isValidWord word =
+       foldr isValidChar True word 
+    && lengthWord > lengthMin 
+    && lengthWord < lengthMax
+  where isValidChar _ False = False
+        isValidChar x True  = isLower x
+        lengthWord = length word
+        lengthMin  = 6
+        lengthMax  = 12
+
 main :: IO ()
 main = do 
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
-    allWords <- getDictionaryWords "/usr/share/dict/words" isLower
+    allWords <- getDictionaryWords "/usr/share/dict/words" isValidWord
     gameWrapper allWords
   where gameWrapper allWords = do
           word <- getRandomWord allWords
