@@ -19,23 +19,28 @@ hangman word guesses badGuessCount
       putStrLn $ "You solved it!  The word is " ++ word ++ "!"
   | badGuessCount > maxBadGuesses =
       putStrLn $ "You ran out of guesses.  The word is " ++ word ++ "."
-  | otherwise = do
-      putStrLn $ "The word is " ++ showPartialWord word guesses
-      putStrLn $ "You have guessed the following letters: " ++ 
-                   (intersperse ' ' . sort) guesses
-      putStr "Incorrect guesses: "
-      putStrLn $ show badGuessCount ++ "/" ++ show maxBadGuesses
-      putStr "Enter a guess please: "
-      guess <- getChar
-      putStrLn []
-      hangman word (guesses' guess) (badGuessCount' guess badGuessCount)
-    where alreadyGuessed guess = guess `elem` guesses
+  | otherwise =
+      printStatus word guesses badGuessCount >>
+      putStr "Enter a guess please: " >>
+      getChar >>= \guess ->
+      putStrLn [] >>
+      let alreadyGuessed guess = guess `elem` guesses
           badGuessCount' guess badGuessCount = 
             if guess `elem` word && (not . alreadyGuessed) guess
             then badGuessCount 
             else badGuessCount + 1
           guesses' guess = 
             if alreadyGuessed guess then guesses else guess:guesses
+      in hangman word (guesses' guess) (badGuessCount' guess badGuessCount)
+
+{- Prints the game status. -}
+printStatus :: String -> [Char] -> Int -> IO ()
+printStatus word guesses badGuessCount = do
+  putStrLn $ "The word is " ++ showPartialWord word guesses
+  putStrLn $ "You have guessed the following letters: " ++ 
+               (intersperse ' ' . sort) guesses
+  putStr "Incorrect guesses: "
+  putStrLn $ show badGuessCount ++ "/" ++ show maxBadGuesses
 
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
