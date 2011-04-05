@@ -45,7 +45,7 @@ printStatus word guesses badGuessCount = do
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
 solved word guesses = foldr helper True word
-  where helper x False = False
+  where helper _ False = False
         helper x True  = x `elem` guesses
 
 {- The word with all non-guessed characters as underscores. -}
