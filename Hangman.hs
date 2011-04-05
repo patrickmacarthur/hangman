@@ -87,7 +87,7 @@ main = do
   where gameWrapper allWords = do
           word <- getRandomWord allWords
           hangman word [] 0
-          putStr $ "Play again? (y/n): "
+          putStr "Play again? (y/n): "
           response <- getChar
           putStrLn "\n"
           when (toLower response == 'y') $ gameWrapper allWords
