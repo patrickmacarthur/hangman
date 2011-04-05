@@ -44,20 +44,16 @@ printStatus word guesses badGuessCount = do
 
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
-solved word guesses = helper word
-  where helper [] = True
-        helper (x:xs)
-          | x `elem` guesses = helper xs
-          | otherwise        = False
+solved word guesses = foldr helper True word
+  where helper x False = False
+        helper x True  = x `elem` guesses
 
 {- The word with all non-guessed characters as underscores. -}
 showPartialWord :: String -> [Char] -> String
-showPartialWord [] _ = []
-showPartialWord word guesses = helper word
-  where helper [] = []
-        helper (x:xs)
-          | x `elem` guesses = x : helper xs
-          | otherwise        = '_' : helper xs
+showPartialWord word guesses = map helper word
+  where helper x
+          | x `elem` guesses = x
+          | otherwise        = '_'
 
 {- Returns all words in the given dictionary file that contains only characters
  - that satisfy the given condition. -}
