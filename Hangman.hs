@@ -24,14 +24,14 @@ hangman word guesses badGuessCount
       putStr "Enter a guess please: " >>
       getChar >>= \guess ->
       putStrLn [] >>
-      let alreadyGuessed guess = guess `elem` guesses
-          badGuessCount' guess badGuessCount = 
-            if guess `elem` word && (not . alreadyGuessed) guess
+      let alreadyGuessed = guess `elem` guesses
+          badGuessCount' = 
+            if guess `elem` word && not alreadyGuessed
             then badGuessCount 
             else badGuessCount + 1
-          guesses' guess = 
-            if alreadyGuessed guess then guesses else sort (guess:guesses)
-      in hangman word (guesses' guess) (badGuessCount' guess badGuessCount)
+          guesses' = 
+            if alreadyGuessed then guesses else sort (guess:guesses)
+      in hangman word guesses' badGuessCount'
 
 {- Prints the game status. -}
 printStatus :: String -> [Char] -> Int -> IO ()
