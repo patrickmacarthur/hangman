@@ -28,10 +28,14 @@ hangman word guesses badGuessCount
       putStr "Enter a guess please: "
       guess <- getChar
       putStrLn []
-      if guess `elem` guesses
-        then hangman word guesses badGuessCount
-        else hangman word (guess:guesses)
-          (if guess `elem` word then badGuessCount else badGuessCount + 1)
+      hangman word (guesses' guess) (badGuessCount' guess badGuessCount)
+    where alreadyGuessed guess = guess `elem` guesses
+          badGuessCount' guess badGuessCount = 
+            if guess `elem` word && (not . alreadyGuessed) guess
+            then badGuessCount 
+            else badGuessCount + 1
+          guesses' guess = 
+            if alreadyGuessed guess then guesses else guess:guesses
 
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
