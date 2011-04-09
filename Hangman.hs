@@ -14,6 +14,7 @@ module Hangman
   , maxBadGuesses
   ) where
 
+import Control.Monad.State
 import Data.Char
 import Data.List
 
@@ -32,36 +33,46 @@ newGame :: String -> HangmanState
 newGame w = HangmanState { word = w, guesses = [], badGuessCount = 0 }
 
 {- Return the list of guesses so far. -}
-guessList :: HangmanState -> [Char]
-guessList state = guesses state
+guessList :: State HangmanState [Char]
+guessList = get >>= \state -> return $ guesses state
 
 {- Takes the human's guess and checks it.  Returns an appropriate result and a
  - new game state. -}
-guessLetter :: HangmanState -> Char -> (HangmanResult, HangmanState)
-guessLetter state guess 
-  | guess `elem` (guesses state) = (RepeatGuess, state)
-  | otherwise = makeResult
-     where state' = state {guesses = sort $ guess:(guesses state)}
-           stateBad = state' { badGuessCount = succ (badGuessCount state) }
-           makeResult
-            | guess `elem` word state' =
-              ( if solved (word state') (guesses state') 
-                then Solved (word state') 
-                else GoodGuess
-              , state'
-              )
-            | badGuessCount state < maxBadGuesses = (BadGuess, stateBad)
-            | otherwise = (Lost (word state), stateBad)
+guessLetter :: Char -> State HangmanState HangmanResult
+guessLetter guess = get >>= helper
+     where helper state
+            | guess `elem` (guesses state) = return RepeatGuess
+            | otherwise = addGuess guess >> get >>= helper'
+           helper' state
+            | guess `elem` word state = 
+                solved >>= \x -> return $ 
+                if x then Solved $ word state else GoodGuess
+            | otherwise = incrementBadGuesses >> get >>= helper''
+           helper'' state
+            | badGuessCount state < maxBadGuesses = return BadGuess
+            | otherwise = return $ Lost $ word state
+
+{- Adds the guess to the list of guesses. -}
+addGuess :: Char -> State HangmanState ()
+addGuess guess = modify $ \state -> 
+    state { guesses = sort $ guess:(guesses state) }
+
+{- Increments the bad guess count. -}
+incrementBadGuesses :: State HangmanState ()
+incrementBadGuesses = modify $ \state ->
+    state { badGuessCount = succ (badGuessCount state) }
 
 {- True if the word has been solved with the given guesses. -}
-solved :: String -> [Char] -> Bool
-solved word guesses = foldr helper True word
-  where helper _ False = False
-        helper x True  = x `elem` guesses
+solved :: State HangmanState Bool
+solved = get >>= \state -> return $
+    foldr (helper $ guesses state) True (word state)
+  where helper _ _ False = False
+        helper guesses x True  = x `elem` guesses
 
 {- The word with all non-guessed characters as underscores. -}
-showPartialWord :: HangmanState -> String
-showPartialWord state = map helper (word state)
-  where helper x
-          | x `elem` (guesses state) = x
-          | otherwise                = '_'
+showPartialWord :: State HangmanState String
+showPartialWord = get >>= \state -> return $ 
+    map (helper $ guesses state) (word state)
+  where helper guesses x
+          | x `elem` guesses = x
+          | otherwise        = '_'
