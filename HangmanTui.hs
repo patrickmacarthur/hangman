@@ -2,20 +2,23 @@
 
 import Hangman
 import Control.Monad
+import Control.Monad.State
+import Control.Monad.Trans
 import Data.Char
 import Data.List
 import System.Random
 import System.IO
 
 {- Main hangman routine. -}
-hangman :: HangmanState -> IO ()
-hangman state =
-  printStatus (showPartialWord state) (guessList state) (badGuessCount state) >>
-  getGuess >>= \guess ->
-  case guessLetter state guess of
-    (Solved word, _) -> putStrLn $ "You solved it!  The word is " ++ word ++ "!"
-    (Lost word, _) -> putStrLn $ "Sorry, you lost.  The word is " ++ word ++ "."
-    (_, state') -> hangman state'
+hangman :: StateT HangmanState IO ()
+hangman =
+  printStatus >>
+  liftIO getGuess >>= 
+  guessLetter >>= \result ->
+  case result of
+    Solved word -> liftIO $ putStrLn $ "You solved it!  The word is " ++ word ++ "!"
+    Lost word -> liftIO $ putStrLn $ "Sorry, you lost.  The word is " ++ word ++ "."
+    _ -> hangman
 
 getGuess :: IO Char
 getGuess = do
@@ -25,13 +28,14 @@ getGuess = do
     return guess
 
 {- Prints the game status. -}
-printStatus :: HangmanState -> IO ()
-printStatus state = putStrLn
-    $ "The word is " ++ showPartialWord state
-   ++ "\nYou have guessed the following letters: "
-   ++ intersperse ' ' (guessList state)
-   ++ "\nIncorrect guesses: " 
-   ++ show (badGuessCount state) ++ "/" ++ show maxBadGuesses
+printStatus :: StateT HangmanState IO ()
+printStatus = do
+  showPartialWord >>= \word -> liftIO $ putStrLn $
+    "The word is " ++ word
+  guessList >>= \list -> liftIO $ putStrLn $
+    "\nYou have guessed the following letters: " ++ intersperse ' ' list
+  returnBadGuesses >>= \count -> liftIO $ putStrLn $
+    "\nIncorrect guesses: " ++ show count ++ "/" ++ show maxBadGuesses
 
 {- Returns all words in the given dictionary file that contains only characters
  - that satisfy the given condition. -}
@@ -66,7 +70,7 @@ main = do
     gameWrapper allWords
   where gameWrapper allWords = do
           word <- getRandomWord allWords
-          hangman $ newGame word
+          runStateT hangman $ newGame word
           putStr "Play again? (y/n): "
           response <- getChar
           putStrLn "\n"

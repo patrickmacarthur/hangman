@@ -11,7 +11,7 @@ module Hangman
   , guessLetter
   , showPartialWord
   , guessList
-  , badGuessCount
+  , returnBadGuesses
   , maxBadGuesses
   ) where
 
@@ -62,6 +62,10 @@ addGuess guess = modify $ \state ->
 incrementBadGuesses :: (MonadState HangmanState m) => m ()
 incrementBadGuesses = modify $ \state ->
     state { badGuessCount = succ (badGuessCount state) }
+
+{- Returns the number of bad guesses given. -}
+returnBadGuesses :: (MonadState HangmanState m) => m Int
+returnBadGuesses = get >>= \state -> return $ badGuessCount state
 
 {- True if the word has been solved with the given guesses. -}
 solved :: (MonadState HangmanState m) => m Bool
