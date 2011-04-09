@@ -3,42 +3,55 @@
 
 {- A simple interactive hangman game. -}
 
-import Control.Monad
+module Hangman
+  ( HangmanResult(..)
+  , HangmanState()
+  , newGame
+  , guessLetter
+  , showPartialWord
+  , guessList
+  , badGuessCount
+  , maxBadGuesses
+  ) where
+
 import Data.Char
 import Data.List
-import System.Random
-import System.IO
+
+data HangmanResult = Solved String | Lost String | GoodGuess | BadGuess | RepeatGuess
+
+data HangmanState = HangmanState { word          :: String
+                                 , guesses       :: [Char]
+                                 , badGuessCount :: Int
+                                 }
 
 {- Maximum number of bad guesses before we end the game. -}
 maxBadGuesses = 7
 
-{- Main hangman routine. -}
-hangman :: String -> [Char] -> Int -> IO ()
-hangman word guesses badGuessCount
-  | solved word guesses = 
-      putStrLn $ "You solved it!  The word is " ++ word ++ "!"
-  | badGuessCount > maxBadGuesses =
-      putStrLn $ "You ran out of guesses.  The word is " ++ word ++ "."
-  | otherwise =
-      printStatus word guesses badGuessCount >>
-      putStr "Enter a guess please: " >>
-      getChar >>= \guess ->
-      putStrLn [] >>
-      let alreadyGuessed = guess `elem` guesses
-          badGuessCount' = 
-            if guess `elem` word && not alreadyGuessed
-            then badGuessCount 
-            else badGuessCount + 1
-          guesses' = 
-            if alreadyGuessed then guesses else sort (guess:guesses)
-      in hangman word guesses' badGuessCount'
+{- An initial state for a hangman game, given a word. -}
+newGame :: String -> HangmanState
+newGame w = HangmanState { word = w, guesses = [], badGuessCount = 0 }
 
-{- Prints the game status. -}
-printStatus :: String -> [Char] -> Int -> IO ()
-printStatus word guesses badGuessCount = putStrLn
-    $ "The word is " ++ showPartialWord word guesses
-   ++ "\nYou have guessed the following letters: " ++ intersperse ' ' guesses
-   ++ "\nIncorrect guesses: " ++ show badGuessCount ++ "/" ++ show maxBadGuesses
+{- Return the list of guesses so far. -}
+guessList :: HangmanState -> [Char]
+guessList state = guesses state
+
+{- Takes the human's guess and checks it.  Returns an appropriate result and a
+ - new game state. -}
+guessLetter :: HangmanState -> Char -> (HangmanResult, HangmanState)
+guessLetter state guess 
+  | guess `elem` (guesses state) = (RepeatGuess, state)
+  | otherwise = makeResult
+     where state' = state {guesses = sort $ guess:(guesses state)}
+           stateBad = state' { badGuessCount = succ (badGuessCount state) }
+           makeResult
+            | guess `elem` word state' =
+              ( if solved (word state') (guesses state') 
+                then Solved (word state') 
+                else GoodGuess
+              , state'
+              )
+            | badGuessCount state < maxBadGuesses = (BadGuess, stateBad)
+            | otherwise = (Lost (word state), stateBad)
 
 {- True if the word has been solved with the given guesses. -}
 solved :: String -> [Char] -> Bool
@@ -47,47 +60,8 @@ solved word guesses = foldr helper True word
         helper x True  = x `elem` guesses
 
 {- The word with all non-guessed characters as underscores. -}
-showPartialWord :: String -> [Char] -> String
-showPartialWord word guesses = map helper word
+showPartialWord :: HangmanState -> String
+showPartialWord state = map helper (word state)
   where helper x
-          | x `elem` guesses = x
-          | otherwise        = '_'
-
-{- Returns all words in the given dictionary file that contains only characters
- - that satisfy the given condition. -}
-getDictionaryWords :: String -> (String -> Bool) -> IO [String]
-getDictionaryWords dictFile valid = do
-    contents <- readFile dictFile
-    return $ (filter valid . lines) contents
-
-{- Returns a random word in the given list of words. -}
-getRandomWord :: [String] -> IO String
-getRandomWord allWords =
-  getStdRandom (randomR (0,length allWords)) >>= \index ->
-    return $ allWords !! index
-
-{- Predicate to determine if a word is valid for use in the hangman game. -}
-isValidWord :: String -> Bool
-isValidWord word =
-       foldr isValidChar True word 
-    && lengthWord > lengthMin 
-    && lengthWord < lengthMax
-  where isValidChar _ False = False
-        isValidChar x True  = isLower x
-        lengthWord = length word
-        lengthMin  = 6
-        lengthMax  = 12
-
-main :: IO ()
-main = do 
-    hSetBuffering stdin NoBuffering
-    hSetBuffering stdout NoBuffering
-    allWords <- getDictionaryWords "/usr/share/dict/words" isValidWord
-    gameWrapper allWords
-  where gameWrapper allWords = do
-          word <- getRandomWord allWords
-          hangman word [] 0
-          putStr "Play again? (y/n): "
-          response <- getChar
-          putStrLn "\n"
-          when (toLower response == 'y') $ gameWrapper allWords
+          | x `elem` (guesses state) = x
+          | otherwise                = '_'
