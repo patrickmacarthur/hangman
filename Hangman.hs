@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 -- File: Hangman.hs
 -- Author: Patrick MacArthur
 
@@ -33,12 +34,12 @@ newGame :: String -> HangmanState
 newGame w = HangmanState { word = w, guesses = [], badGuessCount = 0 }
 
 {- Return the list of guesses so far. -}
-guessList :: State HangmanState [Char]
+guessList :: (MonadState HangmanState m) => m [Char]
 guessList = get >>= \state -> return $ guesses state
 
 {- Takes the human's guess and checks it.  Returns an appropriate result and a
  - new game state. -}
-guessLetter :: Char -> State HangmanState HangmanResult
+guessLetter :: (MonadState HangmanState m) => Char -> m HangmanResult
 guessLetter guess = get >>= helper
      where helper state
             | guess `elem` (guesses state) = return RepeatGuess
@@ -53,24 +54,24 @@ guessLetter guess = get >>= helper
             | otherwise = return $ Lost $ word state
 
 {- Adds the guess to the list of guesses. -}
-addGuess :: Char -> State HangmanState ()
+addGuess :: (MonadState HangmanState m) => Char -> m ()
 addGuess guess = modify $ \state -> 
     state { guesses = sort $ guess:(guesses state) }
 
 {- Increments the bad guess count. -}
-incrementBadGuesses :: State HangmanState ()
+incrementBadGuesses :: (MonadState HangmanState m) => m ()
 incrementBadGuesses = modify $ \state ->
     state { badGuessCount = succ (badGuessCount state) }
 
 {- True if the word has been solved with the given guesses. -}
-solved :: State HangmanState Bool
+solved :: (MonadState HangmanState m) => m Bool
 solved = get >>= \state -> return $
     foldr (helper $ guesses state) True (word state)
   where helper _ _ False = False
         helper guesses x True  = x `elem` guesses
 
 {- The word with all non-guessed characters as underscores. -}
-showPartialWord :: State HangmanState String
+showPartialWord :: (MonadState HangmanState m) => m String
 showPartialWord = get >>= \state -> return $ 
     map (helper $ guesses state) (word state)
   where helper guesses x
