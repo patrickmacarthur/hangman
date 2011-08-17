@@ -1,4 +1,4 @@
--- File: HangmanTui.hs
+-- File: Hangman.hs
 
 import HangmanState
 import Control.Monad
