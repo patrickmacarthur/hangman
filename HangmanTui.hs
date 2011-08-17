@@ -1,6 +1,6 @@
 -- File: HangmanTui.hs
 
-import Hangman
+import HangmanState
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans

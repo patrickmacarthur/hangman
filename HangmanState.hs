@@ -4,7 +4,7 @@
 
 {- A simple interactive hangman game. -}
 
-module Hangman
+module HangmanState
   ( HangmanResult(..)
   , HangmanState()
   , newGame
