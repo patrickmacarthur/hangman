@@ -16,11 +16,11 @@ hangman =
   liftIO getGuess >>= 
   guessLetter >>= \result ->
   case result of
-    Solved word -> liftIO $ putStrLn $ "You solved it!  The word is " ++ word ++ "!"
-    Lost word -> liftIO $ putStrLn $ "Sorry, you lost.  The word is " ++ word ++ "."
-    BadGuess -> (liftIO $ putStrLn $ "Incorrect guess!") >> hangman
-    RepeatGuess -> (liftIO $ putStrLn $ "You already guessed that!") >> hangman
-    GoodGuess -> (liftIO $ putStrLn $ "Ok.") >> hangman
+    Solved word -> lPutStrLn $ "You solved it!  The word is " ++ word ++ "!"
+    Lost word -> lPutStrLn $ "Sorry, you lost.  The word is " ++ word ++ "."
+    BadGuess -> lPutStrLn "Incorrect guess!" >> hangman
+    RepeatGuess -> lPutStrLn "You already guessed that!" >> hangman
+    GoodGuess -> lPutStrLn "Ok." >> hangman
 
 getGuess :: IO Char
 getGuess = do
@@ -32,11 +32,11 @@ getGuess = do
 {- Prints the game status. -}
 printStatus :: StateT HangmanState IO ()
 printStatus = do
-  showPartialWord >>= \word -> liftIO $ putStrLn $
+  showPartialWord >>= \word -> lPutStrLn $
     "The word is " ++ word
-  guessList >>= \list -> liftIO $ putStrLn $
+  guessList >>= \list -> lPutStrLn $
     "\nYou have guessed the following letters: " ++ intersperse ' ' list
-  returnBadGuesses >>= \count -> liftIO $ putStrLn $
+  returnBadGuesses >>= \count -> lPutStrLn $
     "\nIncorrect guesses: " ++ show count ++ "/" ++ show maxBadGuesses
 
 {- Returns all words in the given dictionary file that contains only characters
@@ -63,6 +63,10 @@ isValidWord word =
         lengthWord = length word
         lengthMin  = 6
         lengthMax  = 12
+
+{- Helper function that lifts putStrLn into the State monad for us -}
+lPutStrLn :: String -> StateT HangmanState IO ()
+lPutStrLn s = liftIO $ putStrLn s
 
 main :: IO ()
 main = do 
