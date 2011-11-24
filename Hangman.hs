@@ -32,12 +32,13 @@ getGuess = do
 {- Prints the game status. -}
 printStatus :: StateT HangmanState IO ()
 printStatus = do
+  lPutStrLn ""
   showPartialWord >>= \word -> lPutStrLn $
     "The word is " ++ word
   guessList >>= \list -> lPutStrLn $
-    "\nYou have guessed the following letters: " ++ intersperse ' ' list
+    "You have guessed the following letters: " ++ intersperse ' ' list
   returnBadGuesses >>= \count -> lPutStrLn $
-    "\nIncorrect guesses: " ++ show count ++ "/" ++ show maxBadGuesses
+    "Incorrect guesses: " ++ show count ++ "/" ++ show maxBadGuesses
 
 {- Returns all words in the given dictionary file that contains only characters
  - that satisfy the given condition. -}
