@@ -25,14 +25,16 @@ hangman =
 getGuess :: IO Char
 getGuess = do
     putStr "Enter a guess please: "
-    guess <- getChar
+    hFlush stdout
+    guessLine <- getLine
     putStrLn []
-    return guess
+    if length guessLine /= 1
+	    then putStrLn "Please enter a single letter!" >> getGuess
+	    else return $ head guessLine
 
 {- Prints the game status. -}
 printStatus :: StateT HangmanState IO ()
 printStatus = do
-  lPutStrLn ""
   showPartialWord >>= \word -> lPutStrLn $
     "The word is " ++ word
   guessList >>= \list -> lPutStrLn $
@@ -71,14 +73,13 @@ lPutStrLn s = liftIO $ putStrLn s
 
 main :: IO ()
 main = do 
-    hSetBuffering stdin NoBuffering
-    hSetBuffering stdout NoBuffering
     allWords <- getDictionaryWords "/usr/share/dict/words" isValidWord
     gameWrapper allWords
   where gameWrapper allWords = do
           word <- getRandomWord allWords
           runStateT hangman $ newGame word
           putStr "Play again? (y/n): "
-          response <- getChar
+	  hFlush stdout
+          response <- getLine
           putStrLn "\n"
-          when (toLower response == 'y') $ gameWrapper allWords
+          when (map toLower response == "y") $ gameWrapper allWords
