@@ -1,6 +1,9 @@
 -- File: Hangman.hs
 
+import Prelude hiding (catch)
+
 import HangmanState
+import Control.Exception
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans
@@ -8,6 +11,7 @@ import Data.Char
 import Data.List
 import System.Random
 import System.IO
+import System.IO.Error
 
 {- Main hangman routine. -}
 hangman :: StateT HangmanState IO ()
@@ -29,8 +33,8 @@ getGuess = do
     guessLine <- getLine
     putStrLn []
     if length guessLine /= 1
-	    then putStrLn "Please enter a single letter!" >> getGuess
-	    else return $ head guessLine
+            then putStrLn "Please enter a single letter!" >> getGuess
+            else return $ head guessLine
 
 {- Prints the game status. -}
 printStatus :: StateT HangmanState IO ()
@@ -74,12 +78,13 @@ lPutStrLn s = liftIO $ putStrLn s
 main :: IO ()
 main = do 
     allWords <- getDictionaryWords "/usr/share/dict/words" isValidWord
-    gameWrapper allWords
+    handle (\e -> if isEOFError e then putStrLn [] else ioError e) $
+        gameWrapper allWords
   where gameWrapper allWords = do
           word <- getRandomWord allWords
           runStateT hangman $ newGame word
           putStr "Play again? (y/n): "
-	  hFlush stdout
+          hFlush stdout
           response <- getLine
           putStrLn "\n"
           when (map toLower response == "y") $ gameWrapper allWords
